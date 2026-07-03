@@ -8,9 +8,10 @@ import { ArrowDown, Sparkles, Trophy } from 'lucide-react';
 
 interface HeroProps {
   onShowPreviewClick: () => void;
+  onJoinWaitlistClick: () => void;
 }
 
-export default function Hero({ onShowPreviewClick }: HeroProps) {
+export default function Hero({ onShowPreviewClick, onJoinWaitlistClick }: HeroProps) {
   const itemVariants = {
     hidden: { opacity: 0, y: 25 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } }
@@ -67,17 +68,25 @@ export default function Hero({ onShowPreviewClick }: HeroProps) {
           de cette génération.
         </motion.h1>
 
-        {/* MAIN CALL TO ACTION - Luxury Cyan/Blue Gradient Button */}
+        {/* MAIN CALL TO ACTION - Dual Premium Buttons */}
         <motion.div 
           variants={itemVariants}
-          className="flex flex-col sm:flex-row items-center gap-4 relative"
+          className="flex flex-col sm:flex-row items-center gap-4 relative justify-center w-full max-w-md"
         >
           <button
             onClick={onShowPreviewClick}
-            className="group relative px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-400 via-cyan-300 to-blue-500 text-slate-950 font-sans font-extrabold tracking-wide shadow-[0_0_30px_rgba(6,182,212,0.25)] transition-all duration-300 hover:from-cyan-300 hover:to-cyan-400 hover:shadow-[0_0_40px_rgba(6,182,212,0.4)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center gap-2.5"
+            className="w-full sm:w-auto group relative px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-400 via-cyan-300 to-blue-500 text-slate-950 font-sans font-black tracking-wide text-sm shadow-[0_0_25px_rgba(6,182,212,0.2)] transition-all duration-300 hover:from-cyan-300 hover:to-cyan-400 hover:shadow-[0_0_35px_rgba(6,182,212,0.35)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
           >
             Voir l'aperçu
             <ArrowDown className="w-4 h-4 text-slate-950 group-hover:translate-y-0.5 transition-transform duration-300" />
+          </button>
+
+          <button
+            onClick={onJoinWaitlistClick}
+            className="w-full sm:w-auto group relative px-8 py-4 rounded-xl border border-cyan-500/35 bg-slate-950/80 backdrop-blur-md text-white font-sans font-black tracking-wide text-sm transition-all duration-300 hover:bg-cyan-950/20 hover:border-cyan-400 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>Voir la liste d'attente</span>
+            <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse group-hover:rotate-12 transition-transform" />
           </button>
         </motion.div>
 

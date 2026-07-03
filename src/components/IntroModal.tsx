@@ -12,8 +12,6 @@ interface IntroModalProps {
 }
 
 export default function IntroModal({ isOpen, onClose }: IntroModalProps) {
-  if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop blur & overlay animation */}

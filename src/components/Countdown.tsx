@@ -5,10 +5,14 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Clock, Flame, Users } from 'lucide-react';
+import { Clock, Flame, Users, ArrowRight } from 'lucide-react';
 import { CountdownTime } from '../types';
 
-export default function Countdown() {
+interface CountdownProps {
+  onJoinWaitlistClick: () => void;
+}
+
+export default function Countdown({ onJoinWaitlistClick }: CountdownProps) {
   // Target: Saturday, July 4th, 2026, at 20:00:00 GMT+1
   const targetDate = new Date(Date.UTC(2026, 6, 4, 19, 0, 0));
 
@@ -62,7 +66,7 @@ export default function Countdown() {
       {/* Delicate premium cyan neon line glow */}
       <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
       
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12">
         
         {/* Info label & Target Date + 150 limit warning */}
         <div className="flex flex-col sm:flex-row items-center gap-3 text-center md:text-left">
@@ -133,12 +137,6 @@ export default function Countdown() {
             <span className="text-[10px] font-mono uppercase text-cyan-400 mt-1.5 font-black tracking-wider">Sec</span>
           </div>
 
-        </div>
-
-        {/* Live sync details */}
-        <div className="hidden lg:flex items-center gap-1.5 text-xs font-mono text-gray-400">
-          <Clock className="w-4 h-4 text-cyan-500/70" />
-          <span>Synchronisation GMT+1</span>
         </div>
 
       </div>

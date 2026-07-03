@@ -9,9 +9,10 @@ import { Play, ArrowLeft, ShieldAlert, Sparkles, X, Lock, Flame, Info, Eye } fro
 
 interface AcademyViewProps {
   onBack: () => void;
+  onJoinWaitlist?: () => void;
 }
 
-export default function AcademyView({ onBack }: AcademyViewProps) {
+export default function AcademyView({ onBack, onJoinWaitlist }: AcademyViewProps) {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   
   useEffect(() => {
@@ -228,7 +229,7 @@ export default function AcademyView({ onBack }: AcademyViewProps) {
               {/* High desire neuromarketing text */}
               <div className="space-y-4 text-gray-300 text-xs md:text-sm leading-relaxed mb-6 text-left sm:text-center font-light">
                 <p className="font-medium text-white">
-                  Ces formations seront accessibles dès votre inscription après le lancement officiel.
+                  Ces formations seront accessibles dès votre arrivée après le lancement officiel.
                 </p>
                 
                 <div className="p-3.5 rounded-xl bg-cyan-950/20 border border-cyan-500/10 flex items-start gap-2.5 text-cyan-300 font-sans font-normal text-left">
@@ -247,11 +248,11 @@ export default function AcademyView({ onBack }: AcademyViewProps) {
               <button
                 onClick={() => {
                   setActiveVideo(null);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  onJoinWaitlist?.();
                 }}
                 className="group w-full py-4 px-6 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-sans font-black tracking-wide shadow-lg hover:scale-[1.01] transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>🚀 Réserver ma place parmi les 150</span>
+                <span>🚀 Rejoindre la liste d'attente</span>
               </button>
             </motion.div>
           </div>

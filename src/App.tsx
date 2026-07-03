@@ -12,13 +12,21 @@ import AcademyView from './components/AcademyView';
 import BusinessView from './components/BusinessView';
 import CommunityView from './components/CommunityView';
 import IntroModal from './components/IntroModal';
+import WaitlistPage from './components/WaitlistPage';
 
 export default function App() {
-  const [view, setView] = useState<'home' | 'academy' | 'business' | 'community'>('home');
+  const [view, setView] = useState<'home' | 'academy' | 'business' | 'community' | 'waitlist'>('home');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [waitlistSource, setWaitlistSource] = useState('general');
 
   const handleShowModal = () => {
     setIsModalOpen(true);
+  };
+
+  const handleOpenWaitlist = (source: string) => {
+    setWaitlistSource(source);
+    setView('waitlist');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCloseModal = () => {
@@ -63,10 +71,10 @@ export default function App() {
           {view === 'home' ? (
             <main key="home">
               {/* 1. Compte à Rebours Section (Sticky top warning bar on home view to remind members of the 150 places limit) */}
-              <Countdown />
+              <Countdown onJoinWaitlistClick={() => handleOpenWaitlist('countdown')} />
 
               {/* 2. Hero Section */}
-              <Hero onShowPreviewClick={handleShowModal} />
+              <Hero onShowPreviewClick={handleShowModal} onJoinWaitlistClick={() => handleOpenWaitlist('hero')} />
 
               {/* Decorative Divider */}
               <div className="w-full flex justify-center py-6">
@@ -83,17 +91,21 @@ export default function App() {
           ) : view === 'academy' ? (
             <main key="academy">
               {/* Immersive high-end Academy Plateforme View */}
-              <AcademyView onBack={handleBackToHome} />
+              <AcademyView onBack={handleBackToHome} onJoinWaitlist={() => handleOpenWaitlist('academy')} />
             </main>
           ) : view === 'business' ? (
             <main key="business">
               {/* Immersive high-end Business Plateforme View */}
-              <BusinessView onBack={handleBackToHome} />
+              <BusinessView onBack={handleBackToHome} onJoinWaitlist={() => handleOpenWaitlist('business')} />
             </main>
-          ) : (
+          ) : view === 'community' ? (
             <main key="community">
               {/* Immersive high-end Community Plateforme View */}
-              <CommunityView onBack={handleBackToHome} />
+              <CommunityView onBack={handleBackToHome} onJoinWaitlist={() => handleOpenWaitlist('community')} />
+            </main>
+          ) : (
+            <main key="waitlist">
+              <WaitlistPage onBack={handleBackToHome} source={waitlistSource} />
             </main>
           )}
         </AnimatePresence>

@@ -21,9 +21,10 @@ import {
 
 interface CommunityViewProps {
   onBack: () => void;
+  onJoinWaitlist?: () => void;
 }
 
-export default function CommunityView({ onBack }: CommunityViewProps) {
+export default function CommunityView({ onBack, onJoinWaitlist }: CommunityViewProps) {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [activeChannel, setActiveChannel] = useState<{
     id: number;
@@ -217,7 +218,7 @@ export default function CommunityView({ onBack }: CommunityViewProps) {
         {/* Footnote */}
         <div className="text-center mt-8 max-w-md mx-auto py-4">
           <p className="text-[11px] text-gray-500 font-sans tracking-wide leading-relaxed font-light">
-            ✨ Vos liens d'accès aux salons de discussion Telegram et Discord s'initialiseront une fois votre place réservée.
+            ✨ Vos liens d'accès aux salons de discussion Telegram et Discord s'initialiseront une fois la liste d'attente rejointe.
           </p>
         </div>
 
@@ -291,11 +292,11 @@ export default function CommunityView({ onBack }: CommunityViewProps) {
               <button
                 onClick={() => {
                   setActiveChannel(null);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  onJoinWaitlist?.();
                 }}
                 className="group w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-sans font-black tracking-wide shadow-lg hover:scale-[1.01] transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 text-xs"
               >
-                <span>🚀 Réserver ma place parmi les 150</span>
+                <span>🚀 Rejoindre la liste d'attente</span>
               </button>
             </motion.div>
           </div>
