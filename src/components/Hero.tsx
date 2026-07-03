@@ -80,14 +80,6 @@ export default function Hero({ onShowPreviewClick, onJoinWaitlistClick }: HeroPr
             Voir l'aperçu
             <ArrowDown className="w-4 h-4 text-slate-950 group-hover:translate-y-0.5 transition-transform duration-300" />
           </button>
-
-          <button
-            onClick={onJoinWaitlistClick}
-            className="w-full sm:w-auto group relative px-8 py-4 rounded-xl border border-cyan-500/35 bg-slate-950/80 backdrop-blur-md text-white font-sans font-black tracking-wide text-sm transition-all duration-300 hover:bg-cyan-950/20 hover:border-cyan-400 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
-          >
-            <span>Voir la liste d'attente</span>
-            <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse group-hover:rotate-12 transition-transform" />
-          </button>
         </motion.div>
 
         {/* Muted luxury badge - elegant layout */}

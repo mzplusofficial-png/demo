@@ -18,6 +18,8 @@ export default function App() {
   const [view, setView] = useState<'home' | 'academy' | 'business' | 'community' | 'waitlist'>('home');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [waitlistSource, setWaitlistSource] = useState('general');
+  const [highlightAcademy, setHighlightAcademy] = useState(false);
+  const [hasHighlighted, setHasHighlighted] = useState(false);
 
   const handleShowModal = () => {
     setIsModalOpen(true);
@@ -36,6 +38,15 @@ export default function App() {
       const previewElement = document.getElementById('preview-section');
       if (previewElement) {
         previewElement.scrollIntoView({ behavior: 'smooth' });
+        // Illuminate Academy card
+        if (!hasHighlighted) {
+          setHighlightAcademy(true);
+          setHasHighlighted(true);
+          // Turn off illumination after 6 seconds
+          setTimeout(() => {
+            setHighlightAcademy(false);
+          }, 6000);
+        }
       }
     }, 150);
   };
@@ -86,6 +97,7 @@ export default function App() {
                 onSelectAcademy={handleSelectAcademy} 
                 onSelectBusiness={handleSelectBusiness} 
                 onSelectCommunity={handleSelectCommunity}
+                highlightAcademy={highlightAcademy}
               />
             </main>
           ) : view === 'academy' ? (

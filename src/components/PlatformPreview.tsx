@@ -10,9 +10,10 @@ interface PlatformPreviewProps {
   onSelectAcademy: () => void;
   onSelectBusiness: () => void;
   onSelectCommunity: () => void;
+  highlightAcademy?: boolean;
 }
 
-export default function PlatformPreview({ onSelectAcademy, onSelectBusiness, onSelectCommunity }: PlatformPreviewProps) {
+export default function PlatformPreview({ onSelectAcademy, onSelectBusiness, onSelectCommunity, highlightAcademy }: PlatformPreviewProps) {
   const pillars = [
     {
       name: 'Académie MZ+',
@@ -46,6 +47,7 @@ export default function PlatformPreview({ onSelectAcademy, onSelectBusiness, onS
       <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
         {pillars.map((pillar, index) => {
           const Icon = pillar.icon;
+          const isHighlighted = pillar.name === 'Académie MZ+' && highlightAcademy;
           return (
             <motion.div
               key={index}
@@ -54,17 +56,28 @@ export default function PlatformPreview({ onSelectAcademy, onSelectBusiness, onS
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               onClick={pillar.clickable ? pillar.onClick : undefined}
-              className={`flex flex-col items-center text-center p-6 rounded-2xl border transition-all duration-300 ${
-                pillar.clickable 
-                  ? 'border-cyan-500/20 bg-slate-950/60 hover:border-cyan-400 hover:bg-slate-950/85 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] cursor-pointer' 
-                  : 'border-white/[0.03] bg-slate-950/40 hover:border-cyan-500/10'
+              className={`flex flex-col items-center text-center p-6 rounded-2xl border transition-all duration-300 relative ${
+                isHighlighted
+                  ? 'border-cyan-400 bg-cyan-950/20 shadow-[0_0_50px_rgba(6,182,212,0.4)] scale-[1.05] cursor-pointer'
+                  : pillar.clickable 
+                    ? 'border-cyan-500/20 bg-slate-950/60 hover:border-cyan-400 hover:bg-slate-950/85 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] cursor-pointer' 
+                    : 'border-white/[0.03] bg-slate-950/40 hover:border-cyan-500/10'
               }`}
             >
+              {/* Bouncing Help Banner */}
+              {isHighlighted && (
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 text-[9px] font-sans font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-[0_0_15px_rgba(6,182,212,0.5)] animate-bounce z-20">
+                  ⚡ COMMENCER ICI
+                </div>
+              )}
+
               {/* Premium Icon Container */}
               <div className={`w-14 h-14 rounded-full border flex items-center justify-center mb-4 transition-all duration-300 ${
-                pillar.clickable 
-                  ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-400 group-hover:scale-105' 
-                  : 'bg-cyan-950/20 border-cyan-500/10 text-cyan-500/70'
+                isHighlighted
+                  ? 'bg-cyan-900/60 border-cyan-400 text-cyan-300 scale-105'
+                  : pillar.clickable 
+                    ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-400 group-hover:scale-105' 
+                    : 'bg-cyan-950/20 border-cyan-500/10 text-cyan-500/70'
               }`}>
                 <Icon className="w-6 h-6 stroke-[1.5]" />
               </div>
@@ -73,7 +86,7 @@ export default function PlatformPreview({ onSelectAcademy, onSelectBusiness, onS
               <h3 className="text-lg font-sans font-black tracking-tight text-white mb-2 flex items-center gap-1.5">
                 {pillar.name}
                 {pillar.clickable && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  <span className={`w-1.5 h-1.5 rounded-full bg-cyan-400 ${isHighlighted ? 'animate-ping' : 'animate-pulse'}`} />
                 )}
               </h3>
 
@@ -84,7 +97,11 @@ export default function PlatformPreview({ onSelectAcademy, onSelectBusiness, onS
 
               {/* Click Call to action or Status badge */}
               {pillar.clickable ? (
-                <span className="text-[9px] font-mono uppercase font-bold text-cyan-400 bg-cyan-950/40 px-2.5 py-1 rounded-md border border-cyan-500/30 tracking-widest hover:bg-cyan-500 hover:text-slate-950 transition-all duration-300">
+                <span className={`text-[9px] font-mono uppercase font-bold px-2.5 py-1 rounded-md border tracking-widest transition-all duration-300 ${
+                  isHighlighted
+                    ? 'text-slate-950 bg-cyan-400 border-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.4)]'
+                    : 'text-cyan-400 bg-cyan-950/40 border-cyan-500/30 hover:bg-cyan-500 hover:text-slate-950'
+                }`}>
                   Accéder à l'Aperçu
                 </span>
               ) : (

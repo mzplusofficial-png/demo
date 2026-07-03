@@ -57,6 +57,65 @@ interface WaitlistMember {
   isUser?: boolean;
 }
 
+function getRelativeTime(isoString: string): string {
+  try {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    if (isNaN(diffMs) || diffMs < 0) return "À l'instant";
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return "À l'instant";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `il y a ${diffMin} min`;
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `il y a ${diffHour} h`;
+    const diffDays = Math.floor(diffHour / 24);
+    return `il y a ${diffDays} j`;
+  } catch (e) {
+    return "À l'instant";
+  }
+}
+
+async function fetchRealWaitlist(): Promise<any[]> {
+  try {
+    const metaEnv = (import.meta as any).env || {};
+    const supabaseUrl = metaEnv.VITE_SUPABASE_URL;
+    const supabaseAnonKey = metaEnv.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return [];
+    }
+
+    let cleanUrl = supabaseUrl.trim();
+    if (cleanUrl.endsWith('/')) {
+      cleanUrl = cleanUrl.slice(0, -1);
+    }
+    
+    const apiEndpoint = cleanUrl.includes('/rest/v1')
+      ? `${cleanUrl}/waitlist?order=created_at.asc`
+      : `${cleanUrl}/rest/v1/waitlist?order=created_at.asc`;
+
+    const response = await fetch(apiEndpoint, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.warn("Error fetching waitlist from Supabase:", err);
+    return [];
+  }
+}
+
 interface WaitlistPageProps {
   onBack: () => void;
   source?: string;
@@ -122,122 +181,160 @@ export default function WaitlistPage({ onBack, source = 'general' }: WaitlistPag
     }
   }, []);
 
-  // Generate the 300 base members deterministically
+  // Generate the 300 base members and append real ones from Supabase database
   useEffect(() => {
-    const providers = ['gmail.com', 'yahoo.fr', 'outlook.com', 'hotmail.fr', 'icloud.com', 'live.fr'];
-    const firstNames = ['Amadou', 'Koffi', 'Yao', 'Moussa', 'Abdoulaye', 'Seydou', 'Ousmane', 'Cheikh', 'Youssouf', 'Mamadou', 'Ibrahim', 'Marc', 'Jean', 'Pierre', 'Thomas', 'Nicolas', 'Antoine', 'Lucas', 'Sarah', 'Awa', 'Fatou', 'Aminata', 'Mariam', 'Yasmina', 'Chloé', 'Marie', 'Sophie', 'Isabelle', 'Bachir', 'Arthur'];
-    const lastNames = ['Kouadio', 'Koné', 'Diallo', 'Diop', 'Sow', 'Ndiaye', 'Coulibaly', 'Traoré', 'Keita', 'Kamara', 'Bamba', 'Ouedraogo', 'Fofana', 'Touré', 'Gomez', 'Martin', 'Dubois', 'Moreau', 'Laurent', 'Lefebvre', 'Michel', 'Bernard', 'David', 'Simon', 'Soro', 'Cissé'];
-    
-    const countryPool = COUNTRIES.slice(0, 15); // Primary African and European countries
-    
-    const generatedList: WaitlistMember[] = [];
-    
-    // Fill up to 300 items
-    for (let i = 1; i <= 300; i++) {
-      const nameSeed = (i * 73) % firstNames.length;
-      const lastSeed = (i * 101) % lastNames.length;
-      const provSeed = (i * 13) % providers.length;
-      const countrySeed = (i * 17) % countryPool.length;
+    let active = true;
+
+    const loadAndBuildWaitlist = async () => {
+      // 1. Generate 300 base members deterministically
+      const providers = ['gmail.com', 'yahoo.fr', 'outlook.com', 'hotmail.fr', 'icloud.com', 'live.fr'];
+      const firstNames = ['Amadou', 'Koffi', 'Yao', 'Moussa', 'Abdoulaye', 'Seydou', 'Ousmane', 'Cheikh', 'Youssouf', 'Mamadou', 'Ibrahim', 'Marc', 'Jean', 'Pierre', 'Thomas', 'Nicolas', 'Antoine', 'Lucas', 'Sarah', 'Awa', 'Fatou', 'Aminata', 'Mariam', 'Yasmina', 'Chloé', 'Marie', 'Sophie', 'Isabelle', 'Bachir', 'Arthur'];
+      const lastNames = ['Kouadio', 'Koné', 'Diallo', 'Diop', 'Sow', 'Ndiaye', 'Coulibaly', 'Traoré', 'Keita', 'Kamara', 'Bamba', 'Ouedraogo', 'Fofana', 'Touré', 'Gomez', 'Martin', 'Dubois', 'Moreau', 'Laurent', 'Lefebvre', 'Michel', 'Bernard', 'David', 'Simon', 'Soro', 'Cissé'];
       
-      const country = countryPool[countrySeed];
-      const fn = firstNames[nameSeed].toLowerCase();
-      const ln = lastNames[lastSeed].toLowerCase();
+      const countryPool = COUNTRIES.slice(0, 15); // Primary African and European countries
+      const baseMembers: WaitlistMember[] = [];
       
-      // Anonymize email: e.g., kkouadio***@gmail.com
-      const emailStr = `${fn.slice(0, 1)}${ln.slice(0, 6)}***@${providers[provSeed]}`;
-      
-      // Phone format: +225 •••••••45
-      const phoneSuffix = String((i * 12345) % 90 + 10);
-      const phoneStr = `${country.code} •••••••${phoneSuffix}`;
-      
-      // Realistic registration offset times (older down, newer up)
-      const ageMinutes = 300 - i + 2; 
-      let timeStr = "";
-      if (ageMinutes < 60) {
-        timeStr = `il y a ${ageMinutes} min`;
-      } else {
-        const hours = Math.floor(ageMinutes / 60);
-        if (hours < 24) {
-          timeStr = `il y a ${hours} h`;
+      // Fill up to 300 items
+      for (let i = 1; i <= 300; i++) {
+        const nameSeed = (i * 73) % firstNames.length;
+        const lastSeed = (i * 101) % lastNames.length;
+        const provSeed = (i * 13) % providers.length;
+        const countrySeed = (i * 17) % countryPool.length;
+        
+        const country = countryPool[countrySeed];
+        const fn = firstNames[nameSeed].toLowerCase();
+        const ln = lastNames[lastSeed].toLowerCase();
+        
+        const emailStr = `${fn.slice(0, 1)}${ln.slice(0, 6)}***@${providers[provSeed]}`;
+        const phoneSuffix = String((i * 12345) % 90 + 10);
+        const phoneStr = `${country.code} •••••••${phoneSuffix}`;
+        
+        const ageMinutes = 300 - i + 2; 
+        let timeStr = "";
+        if (ageMinutes < 60) {
+          timeStr = `il y a ${ageMinutes} min`;
         } else {
-          timeStr = `il y a ${Math.floor(hours / 24)} j`;
+          const hours = Math.floor(ageMinutes / 60);
+          if (hours < 24) {
+            timeStr = `il y a ${hours} h`;
+          } else {
+            timeStr = `il y a ${Math.floor(hours / 24)} j`;
+          }
         }
+
+        baseMembers.push({
+          rank: i,
+          email: emailStr,
+          phone: phoneStr,
+          country: country.name,
+          flag: country.flag,
+          time: timeStr
+        });
       }
 
-      generatedList.push({
-        rank: i,
-        email: emailStr,
-        phone: phoneStr,
-        country: country.name,
-        flag: country.flag,
-        time: timeStr
-      });
-    }
-
-    // Check if the user is already registered locally
-    const userEmail = localStorage.getItem('mz_user_email');
-    const userWhatsapp = localStorage.getItem('mz_user_whatsapp');
-    const userCountry = localStorage.getItem('mz_user_country') || selectedCountry.name;
-    const userFlag = localStorage.getItem('mz_user_flag') || selectedCountry.flag;
-    const userRank = parseInt(localStorage.getItem('mz_user_rank') || '301', 10);
-
-    if (userEmail && isSubmitted) {
-      const parts = userEmail.split('@');
-      const anonUserEmail = parts[0].slice(0, 2) + "***@" + parts[1];
+      // 2. Fetch real entries from Supabase
+      const realEntries = await fetchRealWaitlist();
       
-      // We push the user as the 301st entry
-      generatedList.push({
-        rank: userRank,
-        email: anonUserEmail,
-        phone: userWhatsapp ? `${userWhatsapp.slice(0, 4)} •••••••${userWhatsapp.slice(-2)}` : `${selectedCountry.code} •••••••99`,
-        country: userCountry,
-        flag: userFlag,
-        time: "À l'instant",
-        isUser: true
-      });
+      if (!active) return;
+
+      const userEmail = localStorage.getItem('mz_user_email');
+      const userWhatsapp = localStorage.getItem('mz_user_whatsapp');
       
-      setTotalCount(userRank);
-    }
-
-    // Sort to show highest rank first (newest members at the top)
-    generatedList.sort((a, b) => b.rank - a.rank);
-    setMembers(generatedList);
-  }, [isSubmitted]);
-
-  // Real-time simulated growth to keep the page alive!
-  useEffect(() => {
-    const providers = ['gmail.com', 'yahoo.fr', 'outlook.com', 'hotmail.com'];
-    const fakeFirstNames = ['Abdou', 'Fatim', 'Gilles', 'Boris', 'Inès', 'Lamine', 'Serge', 'Kadi', 'Paul', 'Luc'];
-    const fakeLastNames = ['Bakayoko', 'Koffi', 'Nguesso', 'Ouattara', 'Soro', 'Yao', 'Diarra', 'Zongo', 'Tshisekedi'];
-
-    const interval = setInterval(() => {
-      // Add a new mock participant under the user's view
-      setTotalCount(prev => {
-        const nextCount = prev + 1;
-        localStorage.setItem('mz_waitlist_total_count', String(nextCount));
+      const mappedRealMembers: WaitlistMember[] = realEntries.map((entry: any, index: number) => {
+        const rank = 301 + index;
+        const entryEmail = entry.email || '';
+        const entryWhatsapp = entry.whatsapp || '';
         
-        // Pick a random country
-        const randomCountry = COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)];
-        const randomFN = fakeFirstNames[Math.floor(Math.random() * fakeFirstNames.length)].toLowerCase();
-        const randomLN = fakeLastNames[Math.floor(Math.random() * fakeLastNames.length)].toLowerCase();
-        const randomProvider = providers[Math.floor(Math.random() * providers.length)];
+        // Check if this is the user
+        const isUserMatch = (userEmail && entryEmail.toLowerCase() === userEmail.toLowerCase()) || 
+                            (userWhatsapp && entryWhatsapp === userWhatsapp);
 
-        const newMember: WaitlistMember = {
-          rank: nextCount,
-          email: `${randomFN.slice(0, 2)}${randomLN.slice(0, 4)}***@${randomProvider}`,
-          phone: `${randomCountry.code} •••••••${Math.floor(Math.random() * 90) + 10}`,
-          country: randomCountry.name,
-          flag: randomCountry.flag,
-          time: "À l'instant"
+        if (isUserMatch && active) {
+          localStorage.setItem('mz_user_rank', String(rank));
+        }
+
+        // Anonymize email: e.g., ab***@gmail.com
+        let emailStr = entryEmail;
+        if (emailStr.includes('@')) {
+          const parts = emailStr.split('@');
+          emailStr = parts[0].slice(0, 2) + "***@" + parts[1];
+        } else if (emailStr) {
+          emailStr = emailStr.slice(0, 2) + "***";
+        } else {
+          emailStr = "anonyme***";
+        }
+
+        // Phone format
+        let phoneStr = "";
+        const countryCode = entry.country_code || "+225";
+        if (entryWhatsapp) {
+          phoneStr = `${countryCode} •••••••${entryWhatsapp.slice(-2)}`;
+        } else {
+          phoneStr = `${countryCode} •••••••00`;
+        }
+
+        // Find country flag
+        const entryCountryName = entry.country_name || "Côte d'Ivoire";
+        const matchedCountry = COUNTRIES.find(c => c.name.toLowerCase() === entryCountryName.toLowerCase()) || COUNTRIES[0];
+
+        // Format relative time
+        const timeStr = entry.created_at ? getRelativeTime(entry.created_at) : "À l'instant";
+
+        return {
+          rank,
+          email: emailStr,
+          phone: phoneStr,
+          country: matchedCountry.name,
+          flag: matchedCountry.flag,
+          time: timeStr,
+          isUser: !!isUserMatch
         };
-
-        setMembers(prevMembers => [newMember, ...prevMembers]);
-        return nextCount;
       });
-    }, 18000); // realistic registration every 18s
 
-    return () => clearInterval(interval);
-  }, []);
+      // Combine lists
+      const combined = [...baseMembers, ...mappedRealMembers];
+
+      // Check if user is registered but NOT matched in the real entries list
+      const hasUserMatch = mappedRealMembers.some(m => m.isUser);
+      if (isSubmitted && !hasUserMatch && userEmail) {
+        const userCountryName = localStorage.getItem('mz_user_country') || selectedCountry.name;
+        const matchedCountry = COUNTRIES.find(c => c.name.toLowerCase() === userCountryName.toLowerCase()) || selectedCountry;
+        
+        let anonEmail = userEmail;
+        if (anonEmail.includes('@')) {
+          const parts = anonEmail.split('@');
+          anonEmail = parts[0].slice(0, 2) + "***@" + parts[1];
+        }
+
+        const userRank = parseInt(localStorage.getItem('mz_user_rank') || String(301 + mappedRealMembers.length), 10);
+        
+        combined.push({
+          rank: userRank,
+          email: anonEmail,
+          phone: userWhatsapp ? `${userWhatsapp.slice(0, 4)} •••••••${userWhatsapp.slice(-2)}` : `${selectedCountry.code} •••••••99`,
+          country: matchedCountry.name,
+          flag: matchedCountry.flag,
+          time: "À l'instant",
+          isUser: true
+        });
+      }
+
+      // Sort to show highest rank first (newest at top)
+      combined.sort((a, b) => b.rank - a.rank);
+      setMembers(combined);
+      setTotalCount(300 + realEntries.length);
+    };
+
+    loadAndBuildWaitlist();
+
+    // Poll every 10 seconds to keep the list updated in real-time
+    const interval = setInterval(loadAndBuildWaitlist, 10000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [isSubmitted, selectedCountry]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -586,15 +683,36 @@ export default function WaitlistPage({ onBack, source = 'general' }: WaitlistPag
                       </span>
                     </div>
 
-                    <div className="space-y-3.5 text-xs text-gray-300 font-light leading-relaxed">
-                      <p>
-                        Votre place prioritaire est enregistrée avec succès. Votre position évolue en temps réel à mesure que de nouveaux membres rejoignent la liste.
-                      </p>
-                      <p className="font-semibold text-cyan-400">
-                        Heure de lancement recommandée ({localStorage.getItem('mz_user_country') || selectedCountry.name}) : {
-                          COUNTRIES.find(c => c.name === (localStorage.getItem('mz_user_country') || selectedCountry.name))?.launchHour || selectedCountry.launchHour
-                        }
-                      </p>
+                    <div className="space-y-4 text-xs text-gray-200 font-light leading-relaxed">
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-emerald-400 text-sm flex-shrink-0 mt-0.5">✅</span>
+                        <p>
+                          Vous êtes la <strong className="text-cyan-400 font-extrabold">n°{localStorage.getItem('mz_user_rank') || '301'}</strong> à avoir rejoint la liste d'attente MZ+.
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-amber-400 text-sm flex-shrink-0 mt-0.5">⚠️</span>
+                        <p>
+                          Cependant, seules <strong className="text-amber-400 font-black">150 places</strong> seront disponibles lors du lancement.
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-cyan-400 text-sm flex-shrink-0 mt-0.5">⏳</span>
+                        <p>
+                          L'idéal est donc d'être présent le <strong className="text-white font-semibold">4 juillet à {
+                            COUNTRIES.find(c => c.name === (localStorage.getItem('mz_user_country') || selectedCountry.name))?.launchHour || selectedCountry.launchHour
+                          }</strong> afin d'avoir une chance de faire partie des <strong className="text-cyan-400 font-extrabold">150 premiers membres</strong>.
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2.5 pt-1.5 border-t border-white/5">
+                        <span className="text-cyan-400 text-sm flex-shrink-0 mt-0.5">🚀</span>
+                        <p className="font-bold text-cyan-300">
+                          Chaque minute pourra compter.
+                        </p>
+                      </div>
                     </div>
 
                     <button
